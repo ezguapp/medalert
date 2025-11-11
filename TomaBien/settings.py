@@ -18,12 +18,25 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # carpeta donde se recopilarán los estáticos
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # si tienes archivos en /static/
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # donde se recopilan para producción
+# ❌ NO pongas STATICFILES_DIRS, Django ya buscará dentro de App/static
+
+# Whitenoise para producción
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # 👈 justo aquí
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
