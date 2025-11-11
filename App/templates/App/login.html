@@ -1,0 +1,61 @@
+{% extends "App/base.html" %}
+{% load static %}
+
+{% block title %}Iniciar sesión | TomaBien{% endblock %}
+
+{% block content %}
+<section class="login-container">
+    <div class="login-box">
+        <h2>Iniciar sesión</h2>
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <form method="POST" id="loginForm">
+            {% csrf_token %}
+            <div class="input-group">
+                <label for="username">Usuario</label>
+                <input type="text" name="username" id="username" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password">Contraseña</label>
+                <input type="password" name="password" id="password" required>
+            </div>
+
+            <button type="submit">Ingresar</button>
+        </form>
+
+        <p class="register-link">¿No tienes cuenta?
+            <a href="#">Regístrate aquí</a>
+        </p>
+    </div>
+</section>
+
+<script>
+    // (Opcional) Manejo con AJAX para evitar recarga completa
+    $('#loginForm').on('submit', function(e) {
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'login' %}",
+            data: $(this).serialize(),
+            success: function(data) {
+                if (data.success) {
+                    window.location.href = '/'; // redirigir al home
+                } else {
+                    alert(data.error);
+                }
+            },
+            error: function() {
+                alert('Error al intentar iniciar sesión.');
+            }
+        });
+    });
+</script>
+{% endblock %}

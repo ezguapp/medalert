@@ -1,0 +1,269 @@
+/* === Estilos globales === */
+:root {
+    --color-primary: #4B7BF5;
+    --color-primary-light: #7BA4F8;
+    --color-accent: #2EC4B6;
+    --color-bg: #F5F7FB;
+    --color-text: #2E2E2E;
+    --radius: 1rem;
+}
+
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    scroll-behavior: smooth;
+}
+
+/* === Navbar === */
+.navbar {
+    background: rgba(75, 123, 245, 0.95);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-links a:hover {
+    color: var(--color-accent);
+    transform: translateY(-2px);
+}
+
+.nav-links a.active {
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+/* === Hero === */
+.hero {
+    background: linear-gradient(120deg, var(--color-primary), var(--color-primary-light));
+    color: white;
+    text-align: center;
+    padding: 7rem 1rem;
+    border-bottom-left-radius: 4rem;
+    border-bottom-right-radius: 4rem;
+    box-shadow: 0 6px 12px rgba(75, 123, 245, 0.2);
+}
+
+.hero h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.15rem;
+    margin-bottom: 2rem;
+    color: #f2f4ff;
+}
+
+.hero button {
+    background-color: white;
+    color: var(--color-primary);
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hero button:hover {
+    background-color: var(--color-accent);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* === Contenido general === */
+.content {
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+/* === Login / Registro === */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+    padding: 2rem;
+}
+
+.login-box {
+    background-color: white;
+    padding: 2.5rem 3rem;
+    border-radius: var(--radius);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    text-align: center;
+    width: 100%;
+    max-width: 420px;
+    animation: fadeIn 0.6s ease;
+}
+
+.login-box h2 {
+    color: var(--color-primary);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: var(--color-text);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ccd5f0;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(75, 123, 245, 0.2);
+}
+
+.login-box button {
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 0.5rem;
+}
+
+.login-box button:hover {
+    background-color: var(--color-accent);
+    transform: translateY(-2px);
+}
+
+.register-link {
+    margin-top: 1.2rem;
+    font-size: 0.95rem;
+}
+
+.register-link a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
+}
+
+/* === Footer === */
+footer {
+    background-color: var(--color-primary);
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
+}
+
+/* === Animaciones === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === Responsividad === */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+    }
+    .nav-links {
+        flex-direction: column;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    .hero {
+        padding: 4rem 1rem;
+        border-radius: 0;
+    }
+    .login-box {
+        padding: 2rem;
+    }
+}
+
+.card {
+    border-radius: 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+.modal-content {
+    border-radius: 1rem;
+}
+
+.modal-header {
+    background-color: #4B7BF5;
+    color: white;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+}
+
+.card-body p strong {
+    color: var(--color-accent);
+}
+.btn-success {
+    background-color: #2EC4B6;
+    border: none;
+}
+.btn-success:hover {
+    background-color: #28afa2;
+}

@@ -1,0 +1,72 @@
+{% extends "App/base.html" %}
+{% load static %}
+
+{% block title %}Registrarse | TomaBien{% endblock %}
+
+{% block content %}
+<section class="login-container">
+    <div class="login-box">
+        <h2>Crear cuenta</h2>
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <form method="POST" id="registerForm">
+            {% csrf_token %}
+            <div class="input-group">
+                <label for="username">Usuario</label>
+                <input type="text" name="username" id="username" required>
+            </div>
+
+            <div class="input-group">
+                <label for="email">Correo electrónico</label>
+                <input type="email" name="email" id="email" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password1">Contraseña</label>
+                <input type="password" name="password1" id="password1" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password2">Confirmar contraseña</label>
+                <input type="password" name="password2" id="password2" required>
+            </div>
+
+            <button type="submit">Registrarse</button>
+        </form>
+
+        <p class="register-link">¿Ya tienes una cuenta?
+            <a href="{% url 'login' %}">Inicia sesión</a>
+        </p>
+    </div>
+</section>
+
+<script>
+    // Envío con AJAX
+    $('#registerForm').on('submit', function(e) {
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'register' %}",
+            data: $(this).serialize(),
+            success: function(data) {
+                if (data.success) {
+                    alert('¡Registro exitoso! Serás redirigido al inicio.');
+                    window.location.href = '/';
+                } else {
+                    alert(data.error);
+                }
+            },
+            error: function() {
+                alert('Error al registrar usuario.');
+            }
+        });
+    });
+</script>
+{% endblock %}

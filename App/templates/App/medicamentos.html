@@ -1,0 +1,230 @@
+{% extends "App/base.html" %}
+{% block title %}Mis Medicamentos | TomaBien{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-primary"><i class="bi bi-capsule me-2"></i>Mis Medicamentos</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMedicamentoModal">
+      <i class="bi bi-plus-circle me-1"></i> Agregar
+    </button>
+  </div>
+
+  {% if medicamentos %}
+  <div class="row g-4">
+    {% for m in medicamentos %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body text-center">
+          <h5 class="fw-semibold text-primary">{{ m.nombre }}</h5>
+          <p class="small text-muted mb-1"><strong>Dosis:</strong> {{ m.dosis }}</p>
+          <p class="small text-muted mb-1"><strong>Frecuencia:</strong> cada {{ m.frecuencia_horas }} h</p>
+          <p class="small text-muted mb-1"><strong>Duración total:</strong> {{ m.duracion_dias }} días</p>
+          <p class="small text-muted mb-1">
+            <strong>Días restantes:</strong> <span class="dias-restantes" data-id="{{ m.id }}" data-duracion="{{ m.duracion_dias }}">--</span>
+          </p>
+
+          {% if m.instrucciones %}
+            <p class="text-muted small mb-3">{{ m.instrucciones }}</p>
+          {% endif %}
+          
+          <!-- Contador -->
+          <p class="small text-muted mb-2">⏱ Próxima dosis en: 
+            <span class="fw-semibold text-primary timer" data-id="{{ m.id }}" data-frecuencia="{{ m.frecuencia_horas }}">00:00:00</span>
+          </p>
+
+          <button class="btn btn-success btn-sm tomar-btn" data-id="{{ m.id }}">
+            <i class="bi bi-check-circle me-1"></i> Ya lo tomé
+          </button>
+
+          <form method="post" action="" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="delete_id" value="{{ m.id }}">
+            <button type="submit" formaction="{% url 'eliminar_medicamento' m.id %}" class="btn btn-sm btn-outline-danger ms-2">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-clipboard-x fs-1 text-muted"></i>
+    <p class="text-muted mt-3">Aún no tienes medicamentos registrados.</p>
+  </div>
+  {% endif %}
+</section>
+
+<!-- Modal Agregar Medicamento -->
+<div class="modal fade" id="addMedicamentoModal" tabindex="-1" aria-labelledby="addMedicamentoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'medicamentos' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addMedicamentoLabel">Agregar nuevo medicamento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" name="nombre" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Dosis</label>
+            <input type="text" name="dosis" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Frecuencia (horas)</label>
+            <input type="number" name="frecuencia_horas" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Duración (días)</label>
+            <input type="number" name="duracion_dias" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Instrucciones</label>
+            <textarea name="instrucciones" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- === SCRIPT INTERACTIVO === -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const buttons = document.querySelectorAll('.tomar-btn');
+  const timers = document.querySelectorAll('.timer');
+  const diasElems = document.querySelectorAll('.dias-restantes');
+
+  // === Formatear segundos a hh:mm:ss ===
+  const formatTime = (s) => {
+    const h = String(Math.floor(s / 3600)).padStart(2, '0');
+    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+    const sec = String(s % 60).padStart(2, '0');
+    return `${h}:${m}:${sec}`;
+  };
+
+  // === Mostrar notificación de tratamiento finalizado ===
+  const mostrarFinalizado = (nombreMed) => {
+    const alertBox = document.createElement('div');
+    alertBox.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3 shadow';
+    alertBox.style.zIndex = '2000';
+    alertBox.innerHTML = `
+      <strong>✅ Tratamiento completado:</strong> ${nombreMed}
+    `;
+    document.body.appendChild(alertBox);
+    setTimeout(() => alertBox.remove(), 5000);
+  };
+
+  // === Cargar estado guardado y restaurar contadores ===
+  timers.forEach(timerEl => {
+    const id = timerEl.dataset.id;
+    const frecuencia = parseInt(timerEl.dataset.frecuencia) * 3600;
+    const btn = document.querySelector(`.tomar-btn[data-id="${id}"]`);
+    const diasEl = document.querySelector(`.dias-restantes[data-id="${id}"]`);
+    const duracion = parseInt(diasEl.dataset.duracion);
+
+    const lastTake = localStorage.getItem(`lastTake_${id}`);
+    const startDate = localStorage.getItem(`startDate_${id}`);
+    const completed = localStorage.getItem(`completed_${id}`);
+
+    // === Si el tratamiento está completado ===
+    if (completed === "true") {
+      marcarFinalizado(btn, timerEl, diasEl);
+      return;
+    }
+
+    // === Si no hay fecha de inicio, la guardamos ===
+    if (!startDate) {
+      localStorage.setItem(`startDate_${id}`, new Date().toISOString());
+      diasEl.textContent = duracion;
+    } else {
+      const diasPasados = Math.floor((new Date() - new Date(startDate)) / (1000 * 60 * 60 * 24));
+      const restantes = Math.max(duracion - diasPasados, 0);
+      diasEl.textContent = restantes;
+
+      if (restantes === 0) {
+        localStorage.setItem(`completed_${id}`, true);
+        marcarFinalizado(btn, timerEl, diasEl);
+        const nombreMed = btn.closest('.card-body').querySelector('h5').textContent;
+        mostrarFinalizado(nombreMed);
+        return;
+      }
+    }
+
+    // === Restaurar contador si había toma previa ===
+    if (lastTake) {
+      const diff = Math.floor((new Date() - new Date(lastTake)) / 1000);
+      const restante = Math.max(frecuencia - diff, 0);
+      if (restante > 0) {
+        iniciarContador(id, restante, btn, timerEl);
+      } else {
+        timerEl.textContent = "00:00:00";
+        btn.disabled = false;
+        btn.style.opacity = "1";
+      }
+    }
+  });
+
+  // === Al presionar “Ya lo tomé” ===
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const timerEl = document.querySelector(`.timer[data-id="${id}"]`);
+      const frecuencia = parseInt(timerEl.dataset.frecuencia) * 3600;
+      const diasEl = document.querySelector(`.dias-restantes[data-id="${id}"]`);
+      const restantes = parseInt(diasEl.textContent);
+
+      if (restantes <= 0) {
+        marcarFinalizado(btn, timerEl, diasEl);
+        return;
+      }
+
+      localStorage.setItem(`lastTake_${id}`, new Date().toISOString());
+      iniciarContador(id, frecuencia, btn, timerEl);
+    });
+  });
+
+  // === Función para iniciar el contador ===
+  function iniciarContador(id, segundosTotales, btn, timerEl) {
+    let restante = segundosTotales;
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    const intervalo = setInterval(() => {
+      if (restante <= 0) {
+        clearInterval(intervalo);
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        timerEl.textContent = "00:00:00";
+        return;
+      }
+      timerEl.textContent = formatTime(restante);
+      restante--;
+      localStorage.setItem(`remaining_${id}`, restante);
+    }, 1000);
+  }
+
+  // === Marcar medicamento como finalizado ===
+  function marcarFinalizado(btn, timerEl, diasEl) {
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.textContent = "Tratamiento finalizado";
+    btn.classList.remove('btn-success');
+    btn.classList.add('btn-secondary');
+    timerEl.textContent = "✅ Completado";
+    diasEl.textContent = "0";
+  }
+});
+</script>
+
+
+{% endblock %}
