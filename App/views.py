@@ -12,13 +12,41 @@ from datetime import timedelta
 def home(request):
     """Página principal. Muestra distinto contenido según el estado del usuario."""
     if request.user.is_authenticated:
-        # Aquí podrías traer datos personalizados del usuario
         medicamentos = request.user.medicamentos.all()
-        hidratacion = request.user.hidrataciones.order_by('-fecha').first()
+        hidratacion = None
+
+        hoy = timezone.now().date()
+
+        try:
+            perfil = PerfilUsuario.objects.get(user=request.user)
+
+            # Buscar registro de hidratación del día
+            hidratacion = RegistroHidratacion.objects.filter(
+                usuario=request.user, fecha=hoy
+            ).first()
+
+            # Si no existe, crearlo automáticamente (si perfil completo)
+            if not hidratacion and all([
+                perfil.peso_kg,
+                perfil.altura_cm,
+                perfil.sexo,
+                perfil.nivel_actividad
+            ]):
+                hidratacion = RegistroHidratacion.objects.create(
+                    usuario=request.user,
+                    fecha=hoy,
+                    meta_vasos=perfil.calcular_meta_agua_vasos()
+                )
+
+        except PerfilUsuario.DoesNotExist:
+            # Si aún no tiene perfil, simplemente no mostrar nada
+            pass
+
         return render(request, 'App/home.html', {
             'medicamentos': medicamentos,
             'hidratacion': hidratacion,
         })
+
     else:
         return render(request, 'App/home.html')
 
@@ -119,3 +147,54 @@ def eliminar_medicamento(request, id):
     if medicamento:
         medicamento.delete()
     return redirect('medicamentos')
+
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from .models import PerfilUsuario, RegistroHidratacion
+from .forms import PerfilUsuarioForm
+
+
+@login_required
+def hidratacion_view(request):
+    """Muestra el control de hidratación o redirige a completar perfil si faltan datos."""
+    perfil, _ = PerfilUsuario.objects.get_or_create(user=request.user)
+
+    # Verificar si faltan datos fisiológicos
+    if not all([perfil.peso_kg, perfil.altura_cm, perfil.sexo, perfil.nivel_actividad]):
+        return redirect('completar_perfil')
+
+    # Obtener o crear registro diario de hidratación
+    hoy = timezone.now().date()
+    registro, _ = RegistroHidratacion.objects.get_or_create(
+        usuario=request.user,
+        fecha=hoy,
+        defaults={'meta_vasos': perfil.calcular_meta_agua_vasos()}
+    )
+
+    # Incrementar vasos si se presiona el botón "+1"
+    if request.method == 'POST' and 'agregar_vaso' in request.POST:
+        registro.vasos_tomados += 1
+        registro.save()
+        return redirect('hidratacion')
+
+    progreso = registro.progreso()
+    return render(request, 'App/hidratacion.html', {
+        'registro': registro,
+        'progreso': progreso
+    })
+
+
+@login_required
+def completar_perfil_view(request):
+    """Permite al usuario completar su perfil antes de acceder a hidratación."""
+    perfil, _ = PerfilUsuario.objects.get_or_create(user=request.user)
+    if request.method == 'POST':
+        form = PerfilUsuarioForm(request.POST, instance=perfil)
+        if form.is_valid():
+            form.save()
+            return redirect('hidratacion')
+    else:
+        form = PerfilUsuarioForm(instance=perfil)
+    return render(request, 'App/completar_perfil.html', {'form': form})

@@ -8,4 +8,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('medicamentos/', views.medicamentos_view, name='medicamentos'),
     path('medicamentos/eliminar/<int:id>/', views.eliminar_medicamento, name='eliminar_medicamento'),
+    path('hidratacion/', views.hidratacion_view, name='hidratacion'),
+    path('perfil/completar/', views.completar_perfil_view, name='completar_perfil'),
 ]

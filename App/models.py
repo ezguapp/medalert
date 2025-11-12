@@ -11,8 +11,58 @@ class PerfilUsuario(models.Model):
     telefono = models.CharField(max_length=20, null=True, blank=True)
     es_cuidador = models.BooleanField(default=False)
 
+    # --- NUEVOS CAMPOS PARA HIDRATACIÓN ---
+    peso_kg = models.FloatField(null=True, blank=True, help_text="Peso en kilogramos.")
+    altura_cm = models.FloatField(null=True, blank=True, help_text="Altura en centímetros.")
+    sexo = models.CharField(
+        max_length=10,
+        choices=[('M', 'Masculino'), ('F', 'Femenino')],
+        null=True,
+        blank=True
+    )
+    nivel_actividad = models.CharField(
+        max_length=20,
+        choices=[
+            ('sedentario', 'Sedentario'),
+            ('ligero', 'Actividad ligera (1-3 veces/semana)'),
+            ('moderado', 'Actividad moderada (3-5 veces/semana)'),
+            ('intenso', 'Actividad intensa diaria')
+        ],
+        null=True,
+        blank=True,
+        help_text="Nivel de actividad física"
+    )
+
     def __str__(self):
         return self.user.username
+
+    # --- FUNCIÓN PARA CALCULAR META DE AGUA ---
+    def calcular_meta_agua_vasos(self):
+        """
+        Calcula la meta diaria de agua (en vasos de 250 ml)
+        basada en el peso, sexo y nivel de actividad.
+        """
+        if not self.peso_kg:
+            return 8  # valor por defecto si no hay datos
+
+        # Base: 35 ml/kg
+        agua_ml = self.peso_kg * 35
+
+        # Ajuste según nivel de actividad
+        if self.nivel_actividad == 'ligero':
+            agua_ml += 300
+        elif self.nivel_actividad == 'moderado':
+            agua_ml += 600
+        elif self.nivel_actividad == 'intenso':
+            agua_ml += 1000
+
+        # Ajuste leve por sexo
+        if self.sexo == 'M':
+            agua_ml += 250  # los hombres suelen tener más masa magra
+
+        # Convertir a vasos (1 vaso ≈ 250 ml)
+        vasos = round(agua_ml / 250)
+        return vasos
 
 
 # --- MEDICAMENTO ---

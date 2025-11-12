@@ -1,0 +1,21 @@
+{% extends "App/base.html" %}
+{% block title %}Completar perfil | MedAlert{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+  <h2 class="fw-bold text-primary text-center mb-4">Completa tu perfil</h2>
+  <p class="text-center text-muted mb-4">Necesitamos algunos datos para calcular tu hidratación diaria.</p>
+
+  <div class="card shadow-sm border-0 mx-auto" style="max-width: 500px;">
+    <div class="card-body">
+      <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="text-center mt-4">
+          <button type="submit" class="btn btn-primary w-100">Guardar y continuar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

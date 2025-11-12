@@ -1,0 +1,37 @@
+{% extends "App/base.html" %}
+{% block title %}Hidratación | MedAlert{% endblock %}
+
+{% block content %}
+<section class="container py-5 text-center">
+  <h2 class="fw-bold text-info mb-4">💧 Control de Hidratación</h2>
+
+  <div class="card shadow-sm border-0 mx-auto" style="max-width: 400px;">
+    <div class="card-body">
+      <p class="fs-5 mb-2"><strong>Meta diaria:</strong> {{ registro.meta_vasos }} vasos</p>
+      <p class="fs-6 text-muted mb-2">Has tomado: <strong>{{ registro.vasos_tomados }}</strong></p>
+
+      <div class="progress mb-3" style="height: 25px;">
+        <div class="progress-bar bg-info" role="progressbar"
+             style="width: {{ progreso }}%;" aria-valuenow="{{ progreso }}" aria-valuemin="0" aria-valuemax="100">
+          {{ progreso }}%
+        </div>
+      </div>
+
+      {% if registro.vasos_tomados < registro.meta_vasos %}
+      <form method="POST">
+        {% csrf_token %}
+        <button name="agregar_vaso" class="btn btn-info w-100">
+          <i class="bi bi-plus-circle me-1"></i> Añadir vaso
+        </button>
+      </form>
+      {% else %}
+      <p class="text-success fw-semibold mt-3">¡Meta cumplida por hoy! 🏆</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm">Volver al inicio</a>
+  </div>
+</section>
+{% endblock %}
