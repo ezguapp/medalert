@@ -106,7 +106,7 @@ def medicamentos_view(request):
                 dosis=dosis,
                 frecuencia_horas=frecuencia_horas or 0,
                 duracion_dias=duracion_dias or 0,
-                instrucciones=instrucciones
+                instrucciones=instrucciones,
             )
             return redirect('medicamentos')
 

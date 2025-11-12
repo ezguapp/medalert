@@ -22,7 +22,6 @@ class Medicamento(models.Model):
     nombre = models.CharField(max_length=100)
     dosis = models.CharField(max_length=50)
     frecuencia_horas = models.PositiveIntegerField(help_text="Cada cuántas horas debe tomarse.")
-    hora_inicio = models.TimeField(help_text="Hora del primer recordatorio.")
     duracion_dias = models.PositiveIntegerField(help_text="Duración del tratamiento en días.")
     instrucciones = models.TextField(blank=True, null=True)
     activo = models.BooleanField(default=True)
