@@ -31,11 +31,11 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item"><a class="nav-link" href="/">Inicio</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Medicamentos</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Hidratación</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'medicamentos' %}">Medicamentos</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'hidratacion' %}">Hidratación</a></li>
 
         {% if user.is_authenticated %}
-            <li class="nav-item"><a class="nav-link" href="#">Mi Perfil</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'perfil_usuario' %}">Mi Perfil</a></li>
             <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Cerrar sesión</a></li>
         {% else %}
             <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>

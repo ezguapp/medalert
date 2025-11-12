@@ -1,0 +1,102 @@
+{% extends "App/base.html" %}
+{% block title %}Mi Perfil | MedAlert{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+  <h2 class="fw-bold text-primary mb-4"><i class="bi bi-person-circle me-2"></i>Mi Perfil</h2>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h5 class="fw-semibold mb-3">Datos personales</h5>
+
+          <!-- === MODO LECTURA === -->
+          <div id="perfil-view">
+            <p><strong>Nombre de usuario:</strong> {{ perfil.user.username }}</p>
+            <p><strong>Fecha de nacimiento:</strong> {{ perfil.fecha_nacimiento|date:"d/m/Y" }}</p>
+            <p><strong>Teléfono:</strong> {{ perfil.telefono|default:"—" }}</p>
+            <p><strong>Sexo:</strong> {{ perfil.get_sexo_display|default:"—" }}</p>
+            <p><strong>Peso:</strong> {{ perfil.peso_kg|default:"—" }} kg</p>
+            <p><strong>Altura:</strong> {{ perfil.altura_cm|default:"—" }} cm</p>
+            <p><strong>Nivel de actividad:</strong> {{ perfil.get_nivel_actividad_display|default:"—" }}</p>
+            <p><strong>¿Es cuidador?:</strong> {% if perfil.es_cuidador %}Sí{% else %}No{% endif %}</p>
+            <button id="editarBtn" class="btn btn-outline-primary mt-3">
+              <i class="bi bi-pencil-square me-1"></i> Editar perfil
+            </button>
+          </div>
+
+          <!-- === MODO EDICIÓN === -->
+          <form method="POST" id="perfil-form" class="row g-3 d-none">
+            {% csrf_token %}
+            <div class="col-md-6">
+              <label class="form-label">Fecha de nacimiento</label>
+              {{ form.fecha_nacimiento }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Teléfono</label>
+              {{ form.telefono }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Peso (kg)</label>
+              {{ form.peso_kg }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Altura (cm)</label>
+              {{ form.altura_cm }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Sexo</label>
+              {{ form.sexo }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nivel de actividad</label>
+              {{ form.nivel_actividad }}
+            </div>
+            <div class="col-md-6 form-check mt-3 ms-2">
+              {{ form.es_cuidador }} <label class="form-check-label">Soy cuidador</label>
+            </div>
+            <div class="col-12 mt-3">
+              <button type="submit" class="btn btn-primary">Guardar cambios</button>
+              <button type="button" id="cancelarBtn" class="btn btn-secondary ms-2">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel derecho: resumen -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body text-center">
+          <i class="bi bi-droplet text-info fs-1"></i>
+          <h5 class="fw-semibold mt-3">Meta diaria de agua</h5>
+          <p class="text-muted mb-1">Basada en tu perfil actual</p>
+          <h3 class="fw-bold text-info">{{ meta_agua }} vasos</h3>
+          <p class="small text-muted">(≈ {{ meta_agua|add:""|floatformat:1 }} × 250 ml)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- === SCRIPT PARA CAMBIAR ENTRE MODO VER/EDITAR === -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const editarBtn = document.getElementById('editarBtn');
+  const cancelarBtn = document.getElementById('cancelarBtn');
+  const form = document.getElementById('perfil-form');
+  const view = document.getElementById('perfil-view');
+
+  editarBtn?.addEventListener('click', () => {
+    form.classList.remove('d-none');
+    view.classList.add('d-none');
+  });
+
+  cancelarBtn?.addEventListener('click', () => {
+    form.classList.add('d-none');
+    view.classList.remove('d-none');
+  });
+});
+</script>
+{% endblock %}

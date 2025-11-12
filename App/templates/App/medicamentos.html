@@ -1,51 +1,84 @@
 {% extends "App/base.html" %}
 {% block title %}Mis Medicamentos | MedAlert{% endblock %}
 {% block content %}
+
 <section class="container py-5">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-primary"><i class="bi bi-capsule me-2"></i>Mis Medicamentos</h2>
+    <h2 class="fw-bold text-primary">
+      <i class="bi bi-capsule me-2"></i>Mis Medicamentos
+    </h2>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMedicamentoModal">
       <i class="bi bi-plus-circle me-1"></i> Agregar
     </button>
   </div>
 
-  {% if medicamentos %}
+  {% if meds_info %}
   <div class="row g-4">
-    {% for m in medicamentos %}
-    <div class="col-md-6 col-lg-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body text-center">
-          <h5 class="fw-semibold text-primary">{{ m.nombre }}</h5>
-          <p class="small text-muted mb-1"><strong>Dosis:</strong> {{ m.dosis }}</p>
-          <p class="small text-muted mb-1"><strong>Frecuencia:</strong> cada {{ m.frecuencia_horas }} h</p>
-          <p class="small text-muted mb-1"><strong>Duración total:</strong> {{ m.duracion_dias }} días</p>
-          <p class="small text-muted mb-1">
-            <strong>Días restantes:</strong> <span class="dias-restantes" data-id="{{ m.id }}" data-duracion="{{ m.duracion_dias }}">--</span>
+    {% for item in meds_info %}
+      {% with m=item.obj %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body text-center">
+            <h5 class="fw-semibold text-primary">{{ m.nombre }}</h5>
+            <p class="small text-muted mb-1"><strong>Dosis:</strong> {{ m.dosis }}</p>
+            <p class="small text-muted mb-1"><strong>Frecuencia:</strong> cada {{ m.frecuencia_horas }} horas.</p>
+            <p class="small text-muted mb-1"><strong>Duración total:</strong> {{ m.duracion_dias }} días</p>
+
+            <p class="small text-muted mb-1">
+            <strong>Días restantes:</strong>
+            <span>{{ item.dias_restantes|default:"—" }}</span>
+            {% if item.dias_restantes == 0 %}
+              <span class="badge bg-success ms-1">Completado</span>
+            {% endif %}
           </p>
 
-          {% if m.instrucciones %}
-            <p class="text-muted small mb-3">{{ m.instrucciones }}</p>
-          {% endif %}
-          
-          <!-- Contador -->
-          <p class="small text-muted mb-2">⏱ Próxima dosis en: 
-            <span class="fw-semibold text-primary timer" data-id="{{ m.id }}" data-frecuencia="{{ m.frecuencia_horas }}">00:00:00</span>
-          </p>
+            {% if m.instrucciones %}
+              <p class="text-muted small mb-3">{{ m.instrucciones }}</p>
+            {% endif %}
 
-          <button class="btn btn-success btn-sm tomar-btn" data-id="{{ m.id }}">
-            <i class="bi bi-check-circle me-1"></i> Ya lo tomé
-          </button>
+            <!-- Contador -->
+            <p class="small text-muted mb-2">
+              ⏱ Próxima dosis en:
+              {% if item.dias_restantes == 0 %}
+                <span class="fw-semibold text-success">✅ Tratamiento finalizado</span>
+              {% else %}
+                <span class="fw-semibold text-primary timer"
+                      data-id="{{ m.id }}"
+                      data-remaining="{{ item.restantes }}">
+                  {{ item.restantes }}
+                </span>
+              {% endif %}
+            </p>
 
-          <form method="post" action="" class="d-inline">
-            {% csrf_token %}
-            <input type="hidden" name="delete_id" value="{{ m.id }}">
-            <button type="submit" formaction="{% url 'eliminar_medicamento' m.id %}" class="btn btn-sm btn-outline-danger ms-2">
-              <i class="bi bi-trash"></i>
+            <!-- Botón “Ya lo tomé” -->
+            <button class="btn btn-success btn-sm tomar-btn"
+                    data-id="{{ m.id }}"
+                    {% if not item.puede_tomar or item.dias_restantes == 0 %}disabled style="opacity:.6"{% endif %}>
+              <i class="bi bi-check-circle me-1"></i>
+              {% if item.dias_restantes == 0 %}
+                Completado
+              {% elif item.puede_tomar %}
+                Ya lo tomé
+              {% else %}
+                Esperando…
+              {% endif %}
             </button>
-          </form>
+
+            <!-- Botón eliminar -->
+            <form method="post" action="" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="delete_id" value="{{ m.id }}">
+              <button type="submit"
+                      formaction="{% url 'eliminar_medicamento' m.id %}"
+                      class="btn btn-sm btn-outline-danger ms-2">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+
+          </div>
         </div>
       </div>
-    </div>
+      {% endwith %}
     {% endfor %}
   </div>
   {% else %}
@@ -100,11 +133,8 @@
 <!-- === SCRIPT INTERACTIVO === -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const buttons = document.querySelectorAll('.tomar-btn');
   const timers = document.querySelectorAll('.timer');
-  const diasElems = document.querySelectorAll('.dias-restantes');
 
-  // === Formatear segundos a hh:mm:ss ===
   const formatTime = (s) => {
     const h = String(Math.floor(s / 3600)).padStart(2, '0');
     const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
@@ -112,118 +142,85 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${h}:${m}:${sec}`;
   };
 
-  // === Mostrar notificación de tratamiento finalizado ===
-  const mostrarFinalizado = (nombreMed) => {
-    const alertBox = document.createElement('div');
-    alertBox.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3 shadow';
-    alertBox.style.zIndex = '2000';
-    alertBox.innerHTML = `
-      <strong>✅ Tratamiento completado:</strong> ${nombreMed}
-    `;
-    document.body.appendChild(alertBox);
-    setTimeout(() => alertBox.remove(), 5000);
-  };
+  const intervals = {};
 
-  // === Cargar estado guardado y restaurar contadores ===
   timers.forEach(timerEl => {
     const id = timerEl.dataset.id;
-    const frecuencia = parseInt(timerEl.dataset.frecuencia) * 3600;
+    let remaining = parseInt(timerEl.dataset.remaining || '0', 10);
     const btn = document.querySelector(`.tomar-btn[data-id="${id}"]`);
-    const diasEl = document.querySelector(`.dias-restantes[data-id="${id}"]`);
-    const duracion = parseInt(diasEl.dataset.duracion);
 
-    const lastTake = localStorage.getItem(`lastTake_${id}`);
-    const startDate = localStorage.getItem(`startDate_${id}`);
-    const completed = localStorage.getItem(`completed_${id}`);
-
-    // === Si el tratamiento está completado ===
-    if (completed === "true") {
-      marcarFinalizado(btn, timerEl, diasEl);
-      return;
-    }
-
-    // === Si no hay fecha de inicio, la guardamos ===
-    if (!startDate) {
-      localStorage.setItem(`startDate_${id}`, new Date().toISOString());
-      diasEl.textContent = duracion;
-    } else {
-      const diasPasados = Math.floor((new Date() - new Date(startDate)) / (1000 * 60 * 60 * 24));
-      const restantes = Math.max(duracion - diasPasados, 0);
-      diasEl.textContent = restantes;
-
-      if (restantes === 0) {
-        localStorage.setItem(`completed_${id}`, true);
-        marcarFinalizado(btn, timerEl, diasEl);
-        const nombreMed = btn.closest('.card-body').querySelector('h5').textContent;
-        mostrarFinalizado(nombreMed);
-        return;
-      }
-    }
-
-    // === Restaurar contador si había toma previa ===
-    if (lastTake) {
-      const diff = Math.floor((new Date() - new Date(lastTake)) / 1000);
-      const restante = Math.max(frecuencia - diff, 0);
-      if (restante > 0) {
-        iniciarContador(id, restante, btn, timerEl);
-      } else {
+    const tick = () => {
+      if (remaining <= 0) {
+        clearInterval(intervals[id]);
         timerEl.textContent = "00:00:00";
-        btn.disabled = false;
-        btn.style.opacity = "1";
-      }
-    }
-  });
-
-  // === Al presionar “Ya lo tomé” ===
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      const timerEl = document.querySelector(`.timer[data-id="${id}"]`);
-      const frecuencia = parseInt(timerEl.dataset.frecuencia) * 3600;
-      const diasEl = document.querySelector(`.dias-restantes[data-id="${id}"]`);
-      const restantes = parseInt(diasEl.textContent);
-
-      if (restantes <= 0) {
-        marcarFinalizado(btn, timerEl, diasEl);
-        return;
-      }
-
-      localStorage.setItem(`lastTake_${id}`, new Date().toISOString());
-      iniciarContador(id, frecuencia, btn, timerEl);
-    });
-  });
-
-  // === Función para iniciar el contador ===
-  function iniciarContador(id, segundosTotales, btn, timerEl) {
-    let restante = segundosTotales;
-    btn.disabled = true;
-    btn.style.opacity = '0.6';
-    const intervalo = setInterval(() => {
-      if (restante <= 0) {
-        clearInterval(intervalo);
         btn.disabled = false;
         btn.style.opacity = '1';
-        timerEl.textContent = "00:00:00";
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Ya lo tomé';
         return;
       }
-      timerEl.textContent = formatTime(restante);
-      restante--;
-      localStorage.setItem(`remaining_${id}`, restante);
-    }, 1000);
-  }
+      timerEl.textContent = formatTime(remaining);
+      remaining -= 1;
+    };
 
-  // === Marcar medicamento como finalizado ===
-  function marcarFinalizado(btn, timerEl, diasEl) {
-    btn.disabled = true;
-    btn.style.opacity = '0.4';
-    btn.textContent = "Tratamiento finalizado";
-    btn.classList.remove('btn-success');
-    btn.classList.add('btn-secondary');
-    timerEl.textContent = "✅ Completado";
-    diasEl.textContent = "0";
-  }
+    if (remaining > 0) {
+      btn.disabled = true;
+      btn.style.opacity = '.6';
+      btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Esperando…';
+      timerEl.textContent = formatTime(remaining);
+      intervals[id] = setInterval(tick, 1000);
+    } else {
+      timerEl.textContent = "00:00:00";
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+
+    btn.addEventListener('click', async () => {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.style.opacity = '.6';
+      btn.innerHTML = 'Registrando...';
+
+      try {
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const resp = await fetch(`/medicamentos/${id}/toma/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': csrf }
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Error');
+
+        let r = parseInt(data.remaining_seconds, 10) || 0;
+        const run = () => {
+          if (r <= 0) {
+            clearInterval(intervals[id]);
+            timerEl.textContent = "00:00:00";
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Ya lo tomé';
+            return;
+          }
+          timerEl.textContent = formatTime(r);
+          r--;
+        };
+        intervals[id] = setInterval(run, 1000);
+        run();
+
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Esperando…';
+
+        const alertBox = document.createElement('div');
+        alertBox.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3 shadow';
+        alertBox.style.zIndex = '2000';
+        alertBox.innerHTML = `<strong>💊 Toma registrada</strong>`;
+        document.body.appendChild(alertBox);
+        setTimeout(() => alertBox.remove(), 3000);
+      } catch (e) {
+        alert('Error al registrar la toma.');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    });
+  });
 });
 </script>
-
 
 {% endblock %}

@@ -75,6 +75,7 @@ class Medicamento(models.Model):
     duracion_dias = models.PositiveIntegerField(help_text="Duración del tratamiento en días.")
     instrucciones = models.TextField(blank=True, null=True)
     activo = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.nombre} ({self.usuario.username})"
@@ -128,3 +129,12 @@ class Notificacion(models.Model):
 
     def __str__(self):
         return f"Notificación {self.tipo} - {self.usuario.username}"
+    
+
+class RegistroToma(models.Model):
+    """Registro de cada dosis tomada de un medicamento."""
+    medicamento = models.ForeignKey('Medicamento', on_delete=models.CASCADE, related_name='tomas')
+    fecha_hora = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.medicamento.nombre} - {self.fecha_hora.strftime('%d/%m %H:%M')}"
