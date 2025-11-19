@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path,include
 from . import views
 
 urlpatterns = [
@@ -13,4 +13,5 @@ urlpatterns = [
     path('medicamentos/<int:medicamento_id>/toma/', views.registrar_toma, name='registrar_toma'),
     path('medicamentos/<int:medicamento_id>/toma/', views.registrar_toma, name='registrar_toma'),
     path('perfil/', views.perfil_usuario, name='perfil_usuario'),
+    path('', include('pwa.urls')),
 ]

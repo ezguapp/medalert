@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'App',
+    'pwa',
 ]
 
 STATIC_URL = '/static/'
@@ -77,6 +78,26 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'TomaBien.wsgi.application'
+PWA_APP_NAME = 'MedAlert'
+PWA_APP_DESCRIPTION = "Recordatorios de medicamentos e hidratación"
+PWA_APP_THEME_COLOR = '#0d6efd'
+PWA_APP_BACKGROUND_COLOR = '#ffffff'
+PWA_APP_DISPLAY = 'standalone'
+PWA_APP_SCOPE = '/'
+PWA_APP_START_URL = '/'
+PWA_APP_DIR = 'ltr'
+PWA_APP_LANG = 'es-CL'
+PWA_APP_ORIENTATION = 'portrait'
+PWA_APP_ICONS = [
+    {
+        "src": "/static/icons/icon-192.png",
+        "sizes": "192x192"
+    },
+    {
+        "src": "/static/icons/icon-512.png",
+        "sizes": "512x512"
+    }
+]
 
 
 # Database
