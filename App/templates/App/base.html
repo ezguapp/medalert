@@ -59,5 +59,23 @@
         <p>© 2025 MedAlert. Todos los derechos reservados.</p>
     </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+Notification.requestPermission();
+
+async function revisarNotificaciones() {
+    const res = await fetch("/notificaciones/");
+    const data = await res.json();
+
+    data.notificaciones.forEach(n => {
+        new Notification("MedAlert", {
+            body: n.mensaje,
+            icon: "/static/icons/icon-192x192.png"
+        });
+    });
+}
+
+// cada 30s
+setInterval(revisarNotificaciones, 30000);
+</script>
 </body>
 </html>

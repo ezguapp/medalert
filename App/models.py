@@ -32,6 +32,7 @@ class PerfilUsuario(models.Model):
         blank=True,
         help_text="Nivel de actividad física"
     )
+    recordatorio_horas = models.PositiveIntegerField(default=2, help_text="Cada cuántas horas recordar tomar agua.")
 
     def __str__(self):
         return self.user.username

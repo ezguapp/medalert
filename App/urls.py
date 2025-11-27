@@ -14,4 +14,5 @@ urlpatterns = [
     path('medicamentos/<int:medicamento_id>/toma/', views.registrar_toma, name='registrar_toma'),
     path('perfil/', views.perfil_usuario, name='perfil_usuario'),
     path('', include('pwa.urls')),
+    path("notificaciones/", views.obtener_notificaciones, name="notificaciones"),
 ]

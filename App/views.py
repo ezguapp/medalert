@@ -8,13 +8,36 @@ from django.contrib.auth.decorators import login_required
 from .models import Medicamento, RecordatorioMedicamento
 from django.utils import timezone
 from datetime import timedelta
-
+from django.utils.timezone import localdate
 def home(request):
     """Página principal. Muestra distinto contenido según el estado del usuario."""
     if request.user.is_authenticated:
         medicamentos = request.user.medicamentos.all()
         hidratacion = None
+        hoy = localdate()
 
+        notificacion_del_dia = Notificacion.objects.filter(
+            usuario=request.user,
+            tipo="resumen",
+            fecha_envio__date=hoy
+        ).exists()
+
+        if not notificacion_del_dia:
+            # Obtener medicamentos del usuario
+            medicamentos = request.user.medicamentos.all()
+            resumen = []
+
+            for m in medicamentos:
+                proxima, _, _ = calcular_proxima_toma(m)
+                resumen.append(f"{m.nombre}: próxima dosis a las {proxima.strftime('%H:%M')}")
+
+            mensaje = "Resumen de hoy:\n" + "\n".join(resumen)
+
+            Notificacion.objects.create(
+                usuario=request.user,
+                tipo='resumen',
+                mensaje=mensaje
+            )
         hoy = timezone.now().date()
 
         try:
@@ -163,10 +186,23 @@ def calcular_dias_restantes(med):
     transcurridos = (hoy - inicio).days
     return max(med.duracion_dias - transcurridos, 0)
 # === Vista principal de medicamentos ===
+from .models import Notificacion
 @login_required
 def medicamentos_view(request):
     """Lista y creación de medicamentos del usuario + cálculo del temporizador."""
     medicamentos = Medicamento.objects.filter(usuario=request.user)
+    for m in medicamentos:
+        proxima, restantes, puede_tomar = calcular_proxima_toma(m)
+        dias_rest = calcular_dias_restantes(m)
+
+        # ⭐ Crear notificación si toca dosis
+        if puede_tomar and restantes == 0:
+            Notificacion.objects.get_or_create(
+                usuario=request.user,
+                tipo='medicamento',
+                mensaje=f"¡Es hora de tomar {m.nombre}! 💊",
+                enviado=False
+            )
 
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
@@ -238,6 +274,23 @@ from .forms import PerfilUsuarioForm
 def hidratacion_view(request):
     """Muestra el control de hidratación o redirige a completar perfil si faltan datos."""
     perfil, _ = PerfilUsuario.objects.get_or_create(user=request.user)
+
+    ultima_notif = Notificacion.objects.filter(
+        usuario=request.user,
+        tipo='agua'
+    ).order_by('-fecha_envio').first()
+
+    if ultima_notif:
+        horas = (timezone.now() - ultima_notif.fecha_envio).total_seconds() / 3600
+    else:
+        horas = 999  # nunca ha enviado → mandar ahora
+
+    if horas >= perfil.recordatorio_horas:
+        Notificacion.objects.create(
+            usuario=request.user,
+            tipo='agua',
+            mensaje="¡Recuerda hidratarte! 💧"
+        )
 
     # Verificar si faltan datos fisiológicos
     if not all([perfil.peso_kg, perfil.altura_cm, perfil.sexo, perfil.nivel_actividad]):
@@ -321,3 +374,19 @@ def perfil_usuario(request):
         'perfil': perfil,
         'meta_agua': meta_agua,
     })
+
+@login_required
+def obtener_notificaciones(request):
+    pendientes = Notificacion.objects.filter(usuario=request.user, enviado=False)
+
+    data = [
+        {
+            "id": n.id,
+            "tipo": n.tipo,
+            "mensaje": n.mensaje
+        }
+        for n in pendientes
+    ]
+
+    pendientes.update(enviado=True)
+    return JsonResponse({"notificaciones": data})
