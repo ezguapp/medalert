@@ -15,4 +15,6 @@ urlpatterns = [
     path('perfil/', views.perfil_usuario, name='perfil_usuario'),
     path('', include('pwa.urls')),
     path("notificaciones/", views.obtener_notificaciones, name="notificaciones"),
+    path('notificaciones/configurar/', views.configurar_notificaciones, name='config_notificaciones'),
+
 ]

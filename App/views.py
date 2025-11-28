@@ -185,25 +185,16 @@ def calcular_dias_restantes(med):
     inicio = med.created_at.date() if hasattr(med, 'created_at') and med.created_at else hoy
     transcurridos = (hoy - inicio).days
     return max(med.duracion_dias - transcurridos, 0)
+
+
+
 # === Vista principal de medicamentos ===
 from .models import Notificacion
 @login_required
 def medicamentos_view(request):
     """Lista y creación de medicamentos del usuario + cálculo del temporizador."""
-    medicamentos = Medicamento.objects.filter(usuario=request.user)
-    for m in medicamentos:
-        proxima, restantes, puede_tomar = calcular_proxima_toma(m)
-        dias_rest = calcular_dias_restantes(m)
 
-        # ⭐ Crear notificación si toca dosis
-        if puede_tomar and restantes == 0:
-            Notificacion.objects.get_or_create(
-                usuario=request.user,
-                tipo='medicamento',
-                mensaje=f"¡Es hora de tomar {m.nombre}! 💊",
-                enviado=False
-            )
-
+    # 1) PRIMERO: manejar el POST del modal "Agregar"
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
         dosis = request.POST.get('dosis')
@@ -220,9 +211,31 @@ def medicamentos_view(request):
                 duracion_dias=int(duracion_dias or 0),
                 instrucciones=instrucciones,
             )
-            return redirect('medicamentos')
+        # Muy importante: recargar la página para ver el cambio
+        return redirect('medicamentos')
 
-    # Calcular info para cada medicamento (contador y disponibilidad)
+    # 2) GET normal: cargar medicamentos del usuario
+    medicamentos = Medicamento.objects.filter(usuario=request.user)
+
+    # 3) Crear notificaciones SOLO si el tratamiento NO está terminado
+    for m in medicamentos:
+        proxima, restantes, puede_tomar = calcular_proxima_toma(m)
+        dias_rest = calcular_dias_restantes(m)
+
+        # si ya no quedan días → no notificar más de este medicamento
+        if dias_rest == 0:
+            continue
+
+        # Crear notificación solo si toca dosis
+        if puede_tomar and restantes == 0:
+            Notificacion.objects.get_or_create(
+                usuario=request.user,
+                tipo='medicamento',
+                mensaje=f"¡Es hora de tomar {m.nombre}! 💊",
+                enviado=False
+            )
+
+    # 4) Preparar info para el template (incluye finalizados)
     meds_info = []
     for m in medicamentos:
         proxima, restantes, puede_tomar = calcular_proxima_toma(m)
@@ -232,10 +245,14 @@ def medicamentos_view(request):
             'restantes': restantes,
             'puede_tomar': puede_tomar,
             'proxima': proxima,
-            'dias_restantes': dias_rest,   # ← lo pasamos al template
+            'dias_restantes': dias_rest,
         })
 
     return render(request, 'App/medicamentos.html', {'meds_info': meds_info})
+
+
+
+
 
 
 # === Endpoint AJAX para registrar toma ===
@@ -267,14 +284,13 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import PerfilUsuario, RegistroHidratacion
-from .forms import PerfilUsuarioForm
+from .forms import PerfilUsuarioForm,ConfigNotificacionesForm
 
 
 @login_required
 def hidratacion_view(request):
     """Muestra el control de hidratación o redirige a completar perfil si faltan datos."""
     perfil, _ = PerfilUsuario.objects.get_or_create(user=request.user)
-
     ultima_notif = Notificacion.objects.filter(
         usuario=request.user,
         tipo='agua'
@@ -390,3 +406,28 @@ def obtener_notificaciones(request):
 
     pendientes.update(enviado=True)
     return JsonResponse({"notificaciones": data})
+
+@login_required
+def configurar_notificaciones(request):
+    perfil, _ = PerfilUsuario.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+
+        # 1) Si eligió un intervalo de hidratación
+        if 'recordatorio_horas' in request.POST:
+            perfil.recordatorio_horas = float(request.POST['recordatorio_horas'])
+            perfil.save()
+            messages.success(request, "Intervalo de hidratación actualizado.")
+            return redirect('config_notificaciones')
+
+        # 2) Switches de medicamentos y resumen diario
+        perfil.notificar_medicamentos = 'notificar_medicamentos' in request.POST
+        perfil.notificar_resumen_diario = 'notificar_resumen_diario' in request.POST
+
+        perfil.save()
+        messages.success(request, "Cambios guardados.")
+        return redirect('config_notificaciones')
+
+    return render(request, 'App/config_notificaciones.html', {
+        'form': ConfigNotificacionesForm(instance=perfil)
+    })

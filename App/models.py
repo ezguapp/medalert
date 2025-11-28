@@ -32,7 +32,9 @@ class PerfilUsuario(models.Model):
         blank=True,
         help_text="Nivel de actividad física"
     )
-    recordatorio_horas = models.PositiveIntegerField(default=2, help_text="Cada cuántas horas recordar tomar agua.")
+    recordatorio_horas = models.FloatField(default=2, help_text="Cada cuántas horas recordar tomar agua.")
+    notificar_medicamentos = models.BooleanField(default=True)
+    notificar_resumen_diario = models.BooleanField(default=True)
 
     def __str__(self):
         return self.user.username
@@ -77,13 +79,21 @@ class Medicamento(models.Model):
     instrucciones = models.TextField(blank=True, null=True)
     activo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    def actualizar_estado(self):
+        """Desactiva automáticamente si el tratamiento terminó."""
+        hoy = timezone.now().date()
+        if self.activo and hoy > self.fecha_fin():
+            self.activo = False
+            self.save()   
 
     def __str__(self):
         return f"{self.nombre} ({self.usuario.username})"
 
     def fecha_fin(self):
-        """Calcula automáticamente la fecha de término del tratamiento."""
-        return timezone.now().date() + timezone.timedelta(days=self.duracion_dias)
+        """Fecha en que termina el tratamiento desde el día en que se creó."""
+        fecha_inicio = self.created_at.date()
+        return fecha_inicio + timezone.timedelta(days=self.duracion_dias)
 
 
 # --- RECORDATORIO DE MEDICAMENTO ---

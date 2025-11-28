@@ -1,0 +1,127 @@
+{% extends 'App/base.html' %}
+
+{% block title %}Configurar Notificaciones | MedAlert{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body p-4">
+
+                    <h2 class="fw-bold text-center mb-4">
+                        <i class="bi bi-bell-fill text-warning"></i><br>
+                        Configuración de Notificaciones
+                    </h2>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <!-- ======================== -->
+                        <!-- RECORDATORIO DE HIDRATACIÓN -->
+                        <!-- ======================== -->
+                        <div class="mb-4">
+                            <h4 class="fw-semibold mb-3">
+                                <i class="bi bi-droplet-fill text-info"></i>
+                                Recordatorio de Hidratación
+                            </h4>
+
+                            <p class="text-muted mb-2">¿Cada cuánto quieres que MedAlert te recuerde tomar agua?</p>
+
+                            <div class="d-flex gap-3">
+
+                                <!-- BOTÓN 1 HORA -->
+                                <button
+                                    type="submit"
+                                    name="recordatorio_horas"
+                                    value="1"
+                                    class="btn {% if form.instance.recordatorio_horas == 1 %}btn-info text-white{% else %}btn-outline-info{% endif %}
+                                           flex-fill p-3 fs-5 rounded-3">
+                                    Cada 1 hora
+                                </button>
+
+                                <!-- BOTÓN 2 HORAS -->
+                                <button
+                                    type="submit"
+                                    name="recordatorio_horas"
+                                    value="2"
+                                    class="btn {% if form.instance.recordatorio_horas == 2 %}btn-info text-white{% else %}btn-outline-info{% endif %}
+                                           flex-fill p-3 fs-5 rounded-3">
+                                    Cada 2 horas
+                                </button>
+
+                                <!-- BOTÓN 3 HORAS -->
+                                <button
+                                    type="submit"
+                                    name="recordatorio_horas"
+                                    value="3"
+                                    class="btn {% if form.instance.recordatorio_horas == 3 %}btn-info text-white{% else %}btn-outline-info{% endif %}
+                                           flex-fill p-3 fs-5 rounded-3">
+                                    Cada 3 horas
+                                </button>
+
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- ======================== -->
+                        <!-- RECORDATORIOS DE MEDICAMENTOS -->
+                        <!-- ======================== -->
+                        <div class="mb-4">
+                            <h4 class="fw-semibold mb-3">
+                                <i class="bi bi-capsule-pill text-primary"></i>
+                                Recordatorios de Medicamentos
+                            </h4>
+
+                            <div class="form-check form-switch fs-4">
+                                <input 
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    name="notificar_medicamentos"
+                                    {% if form.instance.notificar_medicamentos %}checked{% endif %}
+                                >
+                                <label class="form-check-label ms-2">Activar recordatorios</label>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- ======================== -->
+                        <!-- RESUMEN DIARIO -->
+                        <!-- ======================== -->
+                        <div class="mb-4">
+                            <h4 class="fw-semibold mb-3">
+                                <i class="bi bi-calendar-check text-success"></i>
+                                Resumen Diario
+                            </h4>
+
+                            <div class="form-check form-switch fs-4">
+                                <input 
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    name="notificar_resumen_diario"
+                                    {% if form.instance.notificar_resumen_diario %}checked{% endif %}
+                                >
+                                <label class="form-check-label ms-2">Mostrar resumen cada mañana</label>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button class="btn btn-warning btn-lg px-5 py-3 fs-4 fw-bold rounded-4" type="submit">
+                                Guardar cambios
+                            </button>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

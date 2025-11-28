@@ -30,3 +30,12 @@ class PerfilUsuarioForm(forms.ModelForm):
             'sexo': forms.Select(attrs={'class': 'form-select'}),
             'nivel_actividad': forms.Select(attrs={'class': 'form-select'}),
         }
+class ConfigNotificacionesForm(forms.ModelForm):
+    class Meta:
+        model = PerfilUsuario
+        fields = ['recordatorio_horas', 'notificar_medicamentos', 'notificar_resumen_diario']
+        labels = {
+            'recordatorio_horas': 'Intervalo de recordatorio de hidratación (horas)',
+            'notificar_medicamentos': 'Recordatorios de medicamentos',
+            'notificar_resumen_diario': 'Resumen diario',
+        }
